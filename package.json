@@ -16,6 +16,7 @@
   ],
   "main": "notifier.js",
   "dependencies": {
-    "eventemitter2": "0.4.9"
+    "eventemitter2": "0.4.9",
+    "js-yaml": "3.2.2"
   }
 }

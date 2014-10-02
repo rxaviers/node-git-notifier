@@ -119,6 +119,28 @@ server.on( "scottgonzalez/node-git-notifier/heads/master", [
 ]);
 ```
 
+### Load bindings and shell command actions from a config file
+
+```js
+server.load( "./config.yml" );
+```
+
+```yaml
+scottgonzalez/node-git-notifier/heads/master:
+  - cd /srv/app.stage
+  - git fetch origin
+  - echo "Checking out {{commit}}"
+  - git checkout --force {{commit}}
+  - service app.stage restart
+
+scottgonzalez/node-git-notifier/tags/*:
+  - cd /srv/app
+  - git fetch origin
+  - echo "Checking out {{tag}}"
+  - git checkout --force {{tag}}
+  - service app restart
+```
+
 ## License
 
 Copyright 2012 Scott González

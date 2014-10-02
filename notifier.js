@@ -49,6 +49,17 @@ Notifier.prototype.listen = function() {
 	this.server.listen.apply( this.server, arguments );
 };
 
+Notifier.prototype.load = function( path ) {
+	var config;
+	try {
+		config = yaml.safeLoad( fs.readFileSync( path, "utf8" ) );
+		this.on( config );
+	} catch( error ) {
+		this.emit( "error", error );
+		exit( 1 );
+	}
+};
+
 onSuper = Notifier.prototype.on;
 
 Notifier.prototype.on = function( eventName, arrayOrFn ) {

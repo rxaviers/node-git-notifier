@@ -107,6 +107,18 @@ server.on( "**", function( data ) {
 });
 ```
 
+### Use shell command actions
+
+```js
+server.on( "scottgonzalez/node-git-notifier/heads/master", [
+	"cd /srv/app.stage",
+	"git fetch origin",
+	"echo \"Checking out {{commit}}\"",
+	"git checkout --force {{commit}}",
+	"service app.stage restart"
+]);
+```
+
 ## License
 
 Copyright 2012 Scott González

@@ -1,7 +1,11 @@
-var http = require( "http" ),
+var on, onSuper,
+	http = require( "http" ),
+	EventEmitter2 = require( "eventemitter2" ).EventEmitter2,
+	exec = require( "child_process" ).exec,
+	fs = require( "fs" ),
 	querystring = require( "querystring" ),
 	util = require( "util" ),
-	EventEmitter2 = require( "eventemitter2" ).EventEmitter2;
+	yaml = require( "js-yaml" );
 
 function Notifier() {
 	var notifier = this;
@@ -45,6 +49,54 @@ Notifier.prototype.listen = function() {
 	this.server.listen.apply( this.server, arguments );
 };
 
+onSuper = Notifier.prototype.on;
+
+Notifier.prototype.on = function( eventName, arrayOrFn ) {
+	var commandsTpl, fn, events, self,
+		notifier = this;
+
+	// Handle .on(<object of events>)
+	if ( arguments.length === 1 && typeof eventName === "object" ) {
+		self = this;
+		events = eventName;
+		Object.keys( events ).forEach(function( eventName ) {
+			self.on.apply( self, [ eventName, events[ eventName ] ] );
+		});
+		return;
+
+	// Treat an Array as a list of shell commands to be executed
+	} else if ( Array.isArray( arrayOrFn ) ) {
+		commandsTpl = arrayOrFn.join( ";" );
+		fn = function( data ) {
+			var commands;
+			try {
+				commands = commandsTpl.replace( /{{([^}]+)}}/g, function( match, key ) {
+					if ( !( key in data ) ) {
+						throw new Error( "Could not replace `" + key + "` of `\"" + commandsTpl + "\"` on " +
+							eventName + " " + JSON.stringify(data) );
+					}
+					return data[ key ];
+				});
+			} catch( error ) {
+				notifier.emit( "error", error );
+				return;
+			}
+			exec( commands, function( error, stdout, stderr ) {
+				notifier.emit( "stdout", stdout );
+				notifier.emit( "stderr", stderr );
+				if ( error !== null ) {
+					return notifier.emit( "error", error );
+				}
+			});
+		};
+
+	} else {
+		fn = arrayOrFn;
+	}
+
+	return onSuper.apply( this, [ eventName, fn ] );
+};
+
 Notifier.prototype.process = function( raw ) {
 	// { "zen": "Design for failure.", "hook_id": 123 }
 	if ( raw.zen ) {
@@ -71,6 +123,10 @@ Notifier.prototype.process = function( raw ) {
 	}
 
 	this.emit( eventName, data );
+};
+
+Notifier.prototype.shell = function() {
+
 };
 
 exports.Notifier = Notifier;
